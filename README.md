@@ -7,6 +7,7 @@ This is very basic script and can be improved or mofified.
 #CLIENT_ID and CLIENT_SECRETE
 
 When user create client in RSSO server, user will get one pop up. Please copy secret and client ID from it.
+
 Certificate and client secrets are two different things.
 
 
