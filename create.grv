@@ -1,0 +1,89 @@
+import groovy.json.JsonOutput
+import javax.xml.bind.DatatypeConverter;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.Jwt;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Header;
+import io.jsonwebtoken.ExpiredJwtException;
+import java.security.PrivateKey;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.interfaces.RSAPublicKey;
+import java.security.KeyFactory;
+import io.jsonwebtoken.SignatureAlgorithm;
+
+//import groovy.json.JsonSlurper;
+//import javax.crypto.Cipher;
+//import groovy.json.*
+//import java.security.KeyPair;
+//import java.security.KeyPairGenerator;
+//import java.security.NoSuchAlgorithmException;
+//import java.security.PublicKey;
+
+//Created By NBAGAL on 17-Apr-2020
+
+//Declaring variables
+tokenUrl = 'https://clm-aus-tvysr3:8080/rsso/oauth2/token';
+def clientId = '2ace8f5a-db0c-463d-935c-78aa55f1e8e0';
+def clientSecret = 'MIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQCGiyC6WhVRKjg/zJc4gdi1qyZaFkrPDlyPMjf6QNrjtz9/JIbebwTj9l0EiUcVCU0TD4grWYL07MZoKQTE4TFgUwHGeW+ttAOarRYb7oFbd6qmG6Iv43BR54KclRHidKOscovfzBDVQWqip1dxloB7OLEcNXgVZJll+4/HmUxxCBPCjSSsFiIArFzhM34yyh1JZEHScZRSnY08hTbc8mZmBVJIXeaJxG2PKqYRZuiwK598ywKmyaLFDMAr2n5vs9L+hHdOBZZgrU5rpFhWwQzRkdk2ym8xvQ6tP/rAYMh2MMzLNZyP9ZaJm/ixQIxd0gnx48vG7SEDwElfwNmgWIAxAgMBAAECggEANBfkaSL+A/oj41f06TUlUlndNJ5TAs6dufgIwoWf+vF1zWW4LqGvtBAsvdflRNjgFdQ6tgYndWvD+op/RTeoJZKeKlnUit4bUyVXXSNAxMiVs1EZwA8A60WHRddWIGdnBBsp21Io5lk4z5eZfOp3/r3ZnYF6aFYWKu13IyJQ/aY+27pzsPTpMA76I7rn1QTcDEP+3SEt+9f3FZuBXvp4wY9DrutRkw36LAdjyBAsEn9Qa5O9cGGpE5xxlocVh/bUQZ8q6zJoJIGAnaFGKuh2lOrMQP3XAazDDvQEkm9UgbJbLl1rXOW1cJUQi2MC2WKuw+bge48VFzCbSydocG3YwQKBgQDmjR+XzHB5SN/XI9UdX54jL++cq9M49+JUT6gEg/eHuVvYzkEdavA2d1THVg4LHb2W6ku8uAy/8nR+a5WwLgudbFECr2mXGiwyUFz4dYf+QGe2Gnqt36SPdg7qmtdWAlb/si2BIlPax4l+6HEBkc3XSsf/7A7nsJPmJzd6wkOFqQKBgQCVZQiCDfAcqtfpGIyzIQd3IxwtH+tVDxEboc74zAM3QK7J7qq1QxzCszcoMWUm80HJEK9DyuRMPxptzv3PpfHlCe3WmNhvWfBOTnMcZ6h7N9sZzQYT3v8TgHHY4uwikfeDdqDXnn2P6OiQ7FuKTwXClPkG4R4JzfSfZF/4hQQrSQJ/HNGHIXJsnLx/PmU8Pm+1VLCpQuw3eueBYwiR9/6G8nA5CuC9QvAbFrPT5RbcqocNK9Adp3laHqQv652HGH6o9QSVG8DRchHTdHaXKHeIiD+Etz6YFyPdbhFTy/+O6zFfrpaXGY0w7igDB9oGRivzjvXKCjN3qX5o/lvok2+1AQKBgQCO6yDAimTyh94V+I5hr29c4hHKeYbA0LElJh7ClSlealrMg657ycBx4tEZemeyY3TDzVpeGHNfHd9CvYrCY5aN7nnBmmcz326s+w/UVLYxarYIcMMnr2WGWpKPUkdkqw+GjK5CmDS2v7H9MqBAKGjyRWIW2rXJ22XyNiw5q8bZQQKBgQDZfNKHPob+dL/Ea1w+O/9ytwhHp9CC7ZcTfbg/igd7PF4X6x3mYEwUgVaKKC82o+62+SX/ha5REjNWWBrl0YQ/o7pmfI9BrW8ty7KoKrGLelYT+RZ4PStoDuw2tcj47uGNE4j8Z6tvMK2tXFZBdj7f6+nS3la5rYgz/V223Rw+Aw==';
+def PRIVATE_KEY = 'MIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQCGiyC6WhVRKjg/zJc4gdi1qyZaFkrPDlyPMjf6QNrjtz9/JIbebwTj9l0EiUcVCU0TD4grWYL07MZoKQTE4TFgUwHGeW+ttAOarRYb7oFbd6qmG6Iv43BR54KclRHidKOscovfzBDVQWqip1dxloB7OLEcNXgVZJll+4/HmUxxCBPCjSSsFiIArFzhM34yyh1JZEHScZRSnY08hTbc8mZmBVJIXeaJxG2PKqYRZuiwK598ywKmyaLFDMAr2n5vs9L+hHdOBZZgrU5rpFhWwQzRkdk2ym8xvQ6tP/rAYMh2MMzLNZyP9ZaJm/ixQIxd0gnx48vG7SEDwElfwNmgWIAxAgMBAAECggEANBfkaSL+A/oj41f06TUlUlndNJ5TAs6dufgIwoWf+vF1zWW4LqGvtBAsvdflRNjgFdQ6tgYndWvD+op/RTeoJZKeKlnUit4bUyVXXSNAxMiVs1EZwA8A60WHRddWIGdnBBsp21Io5lk4z5eZfOp3/r3ZnYF6aFYWKu13IyJQ/aY+27pzsPTpMA76I7rn1QTcDEP+3SEt+9f3FZuBXvp4wY9DrutRkw36LAdjyBAsEn9Qa5O9cGGpE5xxlocVh/bUQZ8q6zJoJIGAnaFGKuh2lOrMQP3XAazDDvQEkm9UgbJbLl1rXOW1cJUQi2MC2WKuw+bge48VFzCbSydocG3YwQKBgQDmjR+XzHB5SN/XI9UdX54jL++cq9M49+JUT6gEg/eHuVvYzkEdavA2d1THVg4LHb2W6ku8uAy/8nR+a5WwLgudbFECr2mXGiwyUFz4dYf+QGe2Gnqt36SPdg7qmtdWAlb/si2BIlPax4l+6HEBkc3XSsf/7A7nsJPmJzd6wkOFqQKBgQCVZQiCDfAcqtfpGIyzIQd3IxwtH+tVDxEboc74zAM3QK7J7qq1QxzCszcoMWUm80HJEK9DyuRMPxptzv3PpfHlCe3WmNhvWfBOTnMcZ6h7N9sZzQYT3v8TgHHY4uwikfeDdqDXnn2P6OiQ7FuKTwXClPkG4R4JzfSfZF/4hQQrSQJ/HNGHIXJsnLx/PmU8Pm+1VLCpQuw3eueBYwiR9/6G8nA5CuC9QvAbFrPT5RbcqocNK9Adp3laHqQv652HGH6o9QSVG8DRchHTdHaXKHeIiD+Etz6YFyPdbhFTy/+O6zFfrpaXGY0w7igDB9oGRivzjvXKCjN3qX5o/lvok2+1AQKBgQCO6yDAimTyh94V+I5hr29c4hHKeYbA0LElJh7ClSlealrMg657ycBx4tEZemeyY3TDzVpeGHNfHd9CvYrCY5aN7nnBmmcz326s+w/UVLYxarYIcMMnr2WGWpKPUkdkqw+GjK5CmDS2v7H9MqBAKGjyRWIW2rXJ22XyNiw5q8bZQQKBgQDZfNKHPob+dL/Ea1w+O/9ytwhHp9CC7ZcTfbg/igd7PF4X6x3mYEwUgVaKKC82o+62+SX/ha5REjNWWBrl0YQ/o7pmfI9BrW8ty7KoKrGLelYT+RZ4PStoDuw2tcj47uGNE4j8Z6tvMK2tXFZBdj7f6+nS3la5rYgz/V223Rw+Aw==';
+issuer = 'http://clm-aus-tvysr3:8080/rsso'
+//log.info (issuer)
+def issuerName = 'IN-athakur-W2'
+
+//concatenate clientId and clientSecret, then encode it.
+def con = clientId + ":" + clientSecret
+//log.info ("concatenation of clientId and Secret: " +con)
+String token = con.bytes.encodeBase64 ().toString()
+//log.info ("token: " +token)
+
+testRunner.testCase.setPropertyValue("oauthToken",token)
+
+username = "myssouser";
+//def jwtExpirySeconds = '60';
+
+//Decode Private Key 
+ KeyFactory kf = KeyFactory.getInstance("RSA");
+
+        PKCS8EncodedKeySpec keySpecPKCS8 = new PKCS8EncodedKeySpec(Base64.getDecoder().decode(PRIVATE_KEY));
+        PrivateKey privKey = kf.generatePrivate(keySpecPKCS8);
+
+  //      log.info ("private Key: " +privKey)
+
+//Get the current time and set expiry time
+
+ long nowMs = System.currentTimeMillis();
+ //log.info ("curretTime: " +nowMs)
+            long expMs = nowMs + 9000000;
+            //long newNow = nowMs - 90000000;
+            Date now = new Date(nowMs);
+            Date exp = new Date(expMs); 
+		//log.info ("Minus time" +newNow)
+        	//log.info ("Issue Date: " +now) 
+        	//log.info ("Expiry Date: " +exp) 
+
+//Creating user assertion
+String userJWT = Jwts.builder()
+		.setSubject(username)
+		.setAudience(issuer)
+		.setIssuer(issuerName)
+		.setExpiration(exp)
+		.setIssuedAt(now)
+		.signWith(SignatureAlgorithm.RS256, privKey)
+		.compact();
+
+//log.info ("UserJWT: " +userJWT)
+testRunner.testCase.setPropertyValue("user_assertion",userJWT)
+
+
+//Create client assertion
+String clientJWT = Jwts.builder()
+		.setSubject(clientId)
+		.setAudience(issuer)
+		.setIssuer(clientId)
+		.setExpiration(exp)
+		.setIssuedAt(now)
+		.signWith(SignatureAlgorithm.RS256, privKey)
+		.compact();
+
+//log.info ("ClientJWT: " +clientJWT)
+testRunner.testCase.setPropertyValue("client_assertion", clientJWT)
